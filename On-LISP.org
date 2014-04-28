@@ -547,7 +547,32 @@ Lisp offers most of the data types one finds in other languages. We get integers
 
 ** 2.2 Defining Functions
 
-Most people first learn how to make functions with defun. The following expression defines a function called double which returns twice its argument. > (defun double (x) (* x 2)) DOUBLE Having fed this to Lisp, we can call double in other functions, or from the toplevel: > (double 1) 2 A file of Lisp code usually consists mainly of such defuns, and so resembles a file of procedure definitions in a language like C or Pascal. But something quite different is going on. Those defuns are not just procedure definitions, they're Lisp calls. This distinction will become clearer when we see what's going on underneath defun. Functions are objects in their own right. What defun really does is build one, and store it under the name given as the first argument. So as well as calling double, we can get hold of the function which implements it. The usual way to do so is by using the #' (sharp-quote) operator. This operator can be understood as mapping names to actual function objects. By affixing it to the name of double > #'double #<Interpreted-Function C66ACE> we get the actual object created by the definition above. Though its printed representation will vary from implementation to implementation, a Common Lisp
+Most people first learn how to make functions with defun. The
+following expression defines a function called double which returns
+twice its argument.
+
+> (defun double (x) (* x 2))
+ DOUBLE
+
+ Having fed this to Lisp, we can call double in other functions, or from the toplevel: 
+
+> (double 1)
+ 2 
+
+A file of Lisp code usually consists mainly of such defuns, and so
+resembles a file of procedure definitions in a language like C or
+Pascal. But something quite different is going on. Those defuns are
+not just procedure definitions, they're Lisp calls. This distinction
+will become clearer when we see what's going on underneath defun.
+Functions are objects in their own right. What defun really does is
+build one, and store it under the name given as the first argument. So
+as well as calling double, we can get hold of the function which
+implements it. The usual way to do so is by using the #' (sharp-quote)
+operator. This operator can be understood as mapping names to actual
+function objects. By affixing it to the name of double > #'double
+#<Interpreted-Function C66ACE> we get the actual object created by the
+definition above. Though its printed representation will vary from
+implementation to implementation, a Common Lisp
 
 2.2
 
@@ -555,13 +580,84 @@ DEFINING FUNCTIONS
 
 11
 
-function is a first-class object, with all the same rights as more familiar objects like numbers and strings. So we can pass this function as an argument, return it, store it in a data structure, and so on: > (eq #'double (car (list #'double))) T We don't even need defun to make functions. Like most Lisp objects, we can refer to them literally. When we want to refer to an integer, we just use the integer itself. To represent a string, we use a series of characters surrounded by double-quotes. To represent a function, we use what's called a lambda-expression. A lambda-expression is a list with three parts: the symbol lambda, a parameter list, and a body of zero or more expressions. This lambda-expression refers to a function equivalent to double: (lambda (x) (* x 2)) It describes a function which takes one argument x, and returns 2x. A lambda-expression can also be considered as the name of a function. If double is a proper name, like "Michelangelo," then (lambda (x) (* x 2)) is a definite description, like "the man who painted the ceiling of the Sistine Chapel." By putting a sharp-quote before a lambda-expression, we get the corresponding function: > #'(lambda (x) (* x 2)) #<Interpreted-Function C674CE> This function behaves exactly like double, but the two are distinct objects. In a function call, the name of the function appears first, followed by the arguments: > (double 3) 6 Since lambda-expressions are also names of functions, they can also appear first in function calls: > ((lambda (x) (* x 2)) 3) 6 In Common Lisp, we can have a function named double and a variable named double at the same time.
+function is a first-class object, with all the same rights as more
+familiar objects like numbers and strings. So we can pass this
+function as an argument, return it, store it in a data structure, and
+so on: 
 
-12 > (setq double 2) 2 > (double double) 4
+> (eq #'double (car (list #'double)))
+ T
+
+ We don't even need defun to make functions. Like most Lisp objects,
+we can refer to them literally. When we want to refer to an integer,
+we just use the integer itself. To represent a string, we use a series
+of characters surrounded by double-quotes. To represent a function, we
+use what's called a lambda-expression. A lambda-expression is a list
+with three parts: the symbol lambda, a parameter list, and a body of
+zero or more expressions. This lambda-expression refers to a function
+equivalent to double: 
+
+(lambda (x) (* x 2))
+
+ It describes a function which takes one argument x, and returns 2x. A
+lambda-expression can also be considered as the name of a function. If
+double is a proper name, like "Michelangelo," then (lambda (x) (* x
+2)) is a definite description, like "the man who painted the ceiling
+of the Sistine Chapel." By putting a sharp-quote before a
+lambda-expression, we get the corresponding function: 
+
+> #'(lambda (x) (* x 2)) 
+#<Interpreted-Function C674CE> 
+
+This function behaves exactly like double, but the two are distinct
+objects. In a function call, the name of the function appears first,
+followed by the arguments: 
+
+> (double 3) 
+6 
+
+Since lambda-expressions are also names of functions, they can also
+appear first in function calls: 
+
+> ((lambda (x) (* x 2)) 3)
+ 6
+
+ In Common Lisp, we can have a function named double and a variable
+named double at the same time.
+
+12 
+
+> (setq double 2)
+2
+> (double double)
+4
 
 FUNCTIONS
 
-When a name occurs first in a function call, or is preceded by a sharp-quote, it is taken to refer to a function. Otherwise it is treated as a variable name. It is therefore said that Common Lisp has distinct name-spaces for variables and functions. We can have a variable called foo and a function called foo, and they need not be identical. This situation can be confusing, and leads to a certain amount of ugliness in code, but it is something that Common Lisp programmers have to live with. If necessary, Common Lisp provides two functions which map symbols to the values, or functions, that they represent. The function symbol-value takes a symbol and returns the value of the corresponding special variable: > (symbol-value 'double) 2 while symbol-function does the same for a globally defined function: > (symbol-function 'double) #<Interpreted-Function C66ACE> Note that, since functions are ordinary data objects, a variable could have a function as its value: > (setq x #'append) #<Compiled-Function 46B4BE> > (eq (symbol-value 'x) (symbol-function 'append)) T Beneath the surface, defun is setting the symbol-function of its first argument to a function constructed from the remaining arguments. The following two expressions do approximately the same thing: (defun double (x) (* x 2)) (setf (symbol-function 'double) #'(lambda (x) (* x 2))) So defun has the same effect as procedure definition in other languages--to associate a name with a piece of code. But the underlying mechanism is not the same. We don't need defun to make functions, and functions don't have to be
+When a name occurs first in a function call, or is preceded by a
+sharp-quote, it is taken to refer to a function. Otherwise it is
+^treated as a variable name. It is therefore said that Common Lisp has
+distinct name-spaces for variables and functions. We can have a
+variable called foo and a function called foo, and they need not be
+identical. This situation can be confusing, and leads to a certain
+amount of ugliness in code, but it is something that Common Lisp
+programmers have to live with. If necessary, Common Lisp provides two
+functions which map symbols to the values, or functions, that they
+represent. The function symbol-value takes a symbol and returns the
+value of the corresponding special variable: > (symbol-value 'double)
+2 while symbol-function does the same for a globally defined function:
+> (symbol-function 'double) #<Interpreted-Function C66ACE> Note that,
+since functions are ordinary data objects, a variable could have a
+function as its value: > (setq x #'append) #<Compiled-Function 46B4BE>
+> (eq (symbol-value 'x) (symbol-function 'append)) T Beneath the
+surface, defun is setting the symbol-function of its first argument to
+a function constructed from the remaining arguments. The following two
+expressions do approximately the same thing: (defun double (x) (* x
+2)) (setf (symbol-function 'double) #'(lambda (x) (* x 2))) So defun
+has the same effect as procedure definition in other languages--to
+associate a name with a piece of code. But the underlying mechanism is
+not the same. We don't need defun to make functions, and functions
+don't have to be
 
 2.3
 
@@ -585,8 +681,25 @@ FUNCTIONS
 FUNCTIONS AS PROPERTIES
 
 15
-
-(defun our-remove-if (fn lst) (if (null lst) nil (if (funcall fn (car lst)) (our-remove-if fn (cdr lst)) (cons (car lst) (our-remove-if fn (cdr lst)))))) Note that within this definition fn is not sharp-quoted. Since functions are data objects, a variable can have a function as its regular value. That's what's happening here. Sharp-quote is only for referring to the function named by a symbol--usually one globally defined as such with defun. As Chapter 4 will show, writing new utilities which take functional arguments is an important element of bottom-up programming. Common Lisp has so many utilities built-in that the one you need may exist already. But whether you use built-ins like sort, or write your own utilities, the principle is the same. Instead of wiring in functionality, pass a functional argument.
+#+BEGIN_SRC lisp
+(defun our-remove-if (fn lst)
+  (if (null lst)
+      nil 
+      (if (funcall fn (car lst))
+	  (our-remove-if fn (cdr lst))
+	  (cons (car lst) (our-remove-if fn (cdr lst))))))
+#+END_SRC
+ Note that within this definition fn is not sharp-quoted. Since
+ functions are data objects, a variable can have a function as its
+ regular value. That's what's happening here. Sharp-quote is only for
+ referring to the function named by a symbol--usually one globally
+ defined as such with defun. As Chapter 4 will show, writing new
+ utilities which take functional arguments is an important element of
+ bottom-up programming. Common Lisp has so many utilities built-in
+ that the one you need may exist already. But whether you use
+ built-ins like sort, or write your own utilities, the principle is
+ the same. Instead of wiring in functionality, pass a functional
+ argument.
 
 ** 2.4 Functions as Properties
 The fact that functions are Lisp objects also allows us to write programs which can be extended to deal with new cases on the fly. Suppose we want to write a function which takes a type of animal and behaves appropriately. In most languages, the way to do this would be with a case statement, and we can do it this way in Lisp as well: (defun behave (animal) (case animal (dog (wag-tail) (bark)) (rat (scurry) (squeak)) (cat (rub-legs) (scratch-carpet)))) What if we want to add a new type of animal? If we were planning to add new animals, it would have been better to define behave as follows: (defun behave (animal) (funcall (get animal 'behavior))) and to define the behavior of an individual animal as a function stored, for example, on the property list of its name:
@@ -683,7 +796,14 @@ be reached through the functions which are components of cities: >
 car of a list is a bit ugly. In real programs, the access functions
 might instead be entries in a structure. Using them could also be
 cleaner--databases could be reached indirectly via functions like:
-(defun lookup (key db) (funcall (car db) key)) However, the basic
+
+#+BEGIN_SRC lisp
+
+
+(defun lookup (key db) (funcall (car db) key))
+#+END_SRC
+
+ However, the basic
 behavior of closures is independent of such refinements. In real
 programs, the closures and data structures would also be more
 elaborate than those we see in make-adder or make-dbms. The single
@@ -714,8 +834,9 @@ Lisp idioms:
 
 #+BEGIN_SRC lisp
 (mapcar #'(lambda (x) (+ 2 x)) '(2 5 7 3))
-#+END_SRC
 (4 7 9 5)
+#+END_SRC
+
 
 What about cases where we want to give a recursive function as the
 first argument to mapcar? If the function has been defined with defun,
@@ -729,8 +850,11 @@ But now suppose that the function has to be a
 closure, taking some bindings from the environment in which the mapcar
 occurs. In our example list+, 
 
+#+BEGIN_SRC lisp
+
 
 (defun list+ (lst n) (mapcar #'(lambda (x) (+ x n)) lst))
+#+END_SRC
 
 the first argument to mapcar, #'(lambda (x) (+ x n)), must be defined within list+ because it needs to catch the
 binding of n. So far so good, but what if we want to give mapcar a
@@ -782,16 +906,60 @@ A recursive function is one that calls itself. Such a call is tail-recursive if 
 TAIL-RECURSION
 
 23
+#+BEGIN_SRC lisp
 
-(defun our-find-if (fn lst) (if (funcall fn (car lst)) (car lst) (our-find-if fn (cdr lst)))) because the value of the recursive call is immediately returned. Tail-recursion is desirable because many Common Lisp compilers can transform tail-recursive functions into loops. With such a compiler, you can have the elegance of recursion in your source code without the overhead of function calls at runtime. The gain in speed is usually great enough that programmers go out of their way to make functions tail-recursive. A function which isn't tail-recursive can often be transformed into one that is by embedding in it a local function which uses an accumulator. In this context, an accumulator is a parameter representing the value computed so far. For example, our-length could be transformed into (defun our-length (lst) (labels ((rec (lst acc) (if (null lst) acc (rec (cdr lst) (1+ acc))))) (rec lst 0))) where the number of list elements seen so far is contained in a second parameter, acc. When the recursion reaches the end of the list, the value of acc will be the total length, which can just be returned. By accumulating the value as we go down the calling tree instead of constructing it on the way back up, we can make rec tail-recursive. Many Common Lisp compilers can do tail-recursion optimization, but not all of them do it by default. So after writing your functions to be tail-recursive, you may also want to put (proclaim '(optimize speed)) at the top of the file, to ensure that the compiler can take advantage of your efforts. 2 Given tail-recursion and type declarations, existing Common Lisp compilers can generate code that runs as fast as, or faster than, C. Richard Gabriel gives as  an example the following function, which returns the sum of the integers from 1 to n:
-declaration (optimize speed) ought to be an abbreviation for (optimize (speed 3)). However, one Common Lisp implementation does tail-recursion optimization with the former, but not the latter.
-2 The
+
+(defun our-find-if (fn lst) (if (funcall fn (car lst)) (car lst) (our-find-if fn (cdr lst))))
+#+END_SRC
+
+because the value of the recursive call is immediately returned.
+Tail-recursion is desirable because many Common Lisp compilers can
+transform tail-recursive functions into loops. With such a compiler,
+you can have the elegance of recursion in your source code without the
+overhead of function calls at runtime. The gain in speed is usually
+great enough that programmers go out of their way to make functions
+tail-recursive. A function which isn't tail-recursive can often be
+transformed into one that is by embedding in it a local function which
+uses an accumulator. In this context, an accumulator is a parameter
+representing the value computed so far. For example, our-length could
+be transformed into (defun our-length (lst) (labels ((rec (lst acc)
+(if (null lst) acc (rec (cdr lst) (1+ acc))))) (rec lst 0))) where the
+number of list elements seen so far is contained in a second
+parameter, acc. When the recursion reaches the end of the list, the
+value of acc will be the total length, which can just be returned. By
+accumulating the value as we go down the calling tree instead of
+constructing it on the way back up, we can make rec tail-recursive.
+Many Common Lisp compilers can do tail-recursion optimization, but not
+all of them do it by default. So after writing your functions to be
+tail-recursive, you may also want to put (proclaim '(optimize speed))
+at the top of the file, to ensure that the compiler can take advantage
+of your efforts. 2 Given tail-recursion and type declarations,
+existing Common Lisp compilers can generate code that runs as fast as,
+or faster than, C. Richard Gabriel gives as an example the following
+function, which returns the sum of the integers from 1 to n:
+declaration (optimize speed) ought to be an abbreviation for (optimize
+(speed 3)). However, one Common Lisp implementation does
+tail-recursion optimization with the former, but not the latter. 2 The
 
 24
 
 FUNCTIONS
+#+BEGIN_SRC lisp
 
-(defun triangle (n) (labels ((tri (c n) (declare (type fixnum n c)) (if (zerop n) c (tri (the fixnum (+ n c)) (the fixnum (- n 1)))))) (tri 0 n))) This is what fast Common Lisp code looks like. At first it may not seem natural to write functions this way. It's often a good idea to begin by writing a function in whatever way seems most natural, and then, if necessary, transforming it into a tail-recursive equivalent.
+
+(defun triangle (n) 
+  (labels ((tri (c n) (declare (type fixnum n c))
+		(if (zerop n)
+		    c
+		    (tri (the fixnum (+ n c))
+			 (the fixnum (- n 1))))))
+    (tri 0 n)))
+#+END_SRC
+
+This is what fast Common Lisp code looks like. At first it may not
+seem natural to write functions this way. It's often a good idea to
+begin by writing a function in whatever way seems most natural, and
+then, if necessary, transforming it into a tail-recursive equivalent.
 
 ** 2.9 Compilation
 Lisp functions can be compiled either individually or by the file. If you just type a defun expression into the toplevel, > (defun foo (x) (1+ x)) FOO many implementations will create an interpreted function. You can check whether a given function is compiled by feeding it to compiled-function-p: > (compiled-function-p #'foo) NIL We can have foo compiled by giving its name to compile > (compile 'foo) FOO which will compile the definition of foo and replace the interpreted version with  a compiled one. > (compiled-function-p #'foo) T Compiled and interpreted functions are both Lisp objects, and behave the same, except with respect to compiled-function-p. Literal functions can also be compiled: compile expects its first argument to be a name, but if you give nil as the first argument, it will compile the lambda-expression given as the second argument.
